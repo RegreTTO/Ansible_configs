@@ -1,0 +1,38 @@
+---
+- name: "Installation of python3.10"
+  hosts: all
+  become: true
+  vars:
+    - dependences:
+        - openssl
+  tasks:
+    - name: Install dependences
+      yum:
+        state: latest
+        name: "{{ dependences }}"
+
+    - name: "[Python3.10] download source"
+      get_url:
+        url: "https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tgz"
+        dest: "."
+
+    - name: "[Python3.10] untar"
+      shell:
+        cmd: "tar xvf Python-3.10.0.tgz "
+
+    - name: "[Python3.10] create makefile"
+      shell:
+        chdir: "./Python-3.10.0"
+        cmd: "./configure --enable-optimizations"
+
+    - name: "[Python3.10] compile"
+      shell:
+        chdir: "./Python-3.10.0"
+        cmd: "make altinstall"
+
+    - name: Check Python installation
+      shell:
+        cmd: "python --version"
+        register: python310_version
+    - debug:
+        msg: "Python version on server: {{ python310_version }}"

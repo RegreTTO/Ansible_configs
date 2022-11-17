@@ -1,0 +1,54 @@
+---
+- name: Installation and updating of programming tools
+  hosts: all
+  become: true
+  force_handlers: true
+  vars:
+
+    - yum_packages:
+        - "@Development tools"
+        - git
+        - gcc
+        - gdb
+        - curl
+        - tar
+        - python
+        - java-11-openjdk-devel
+
+  tasks:
+    - name: Get pwd
+      shell:
+        cmd: "pwd"
+      register: home_dir
+    - debug:
+        msg: "Commands are running in {{ home_dir['stdout'] }}"
+    - name: Packages installation
+      yum:
+        state: latest
+        name: "{{ yum_packages }}"
+    - name: GEF Installation
+      shell:
+        cmd: 'su developer -c bash -c "$(curl -fsSL https://gef.blah.cat/sh)"'
+    - name: Rust installation
+      block:
+        - name: Check Rust installation
+          shell:
+            cmd: 'su developer -c rustc -V'
+          register: rust_version
+        - debug:
+            msg: "Rust version: {{ rust_version['stdin'] }}"
+
+      rescue:
+        - name: Rust download
+          get_url:
+            dest: '/home/developer/rustup.rs'
+            url: "https://sh.rustup.rs"
+            mode: '0777'
+        - name: Rust install
+          shell:
+            chdir: '/home/developer'
+            cmd: 'su developer -c "$(pwd)/rustup.rs -y"'
+        - name: Clear cache
+          file:
+            path: "/home/developer/rustup.rs"
+            state: absent
