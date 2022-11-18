@@ -4,7 +4,7 @@
   become: true
   force_handlers: true
   vars:
-
+    - USER: andy
     - yum_packages:
         - "@Development tools"
         - git
@@ -14,6 +14,12 @@
         - tar
         - python
         - java-11-openjdk-devel
+        - ruby
+        - php
+        - R
+        - lua
+        - perl
+        
 
   tasks:
     - name: Get pwd
@@ -28,12 +34,12 @@
         name: "{{ yum_packages }}"
     - name: GEF Installation
       shell:
-        cmd: 'su developer -c bash -c "$(curl -fsSL https://gef.blah.cat/sh)"'
+        cmd: 'su {{USER}} -c bash -c "$(curl -fsSL https://gef.blah.cat/sh)"'
     - name: Rust installation
       block:
         - name: Check Rust installation
           shell:
-            cmd: 'su developer -c rustc -V'
+            cmd: 'su {{USER}} -c rustc -V'
           register: rust_version
         - debug:
             msg: "Rust version: {{ rust_version['stdin'] }}"
@@ -41,14 +47,85 @@
       rescue:
         - name: Rust download
           get_url:
-            dest: '/home/developer/rustup.rs'
+            dest: '/home/{{USER}}/rustup.rs'
             url: "https://sh.rustup.rs"
             mode: '0777'
         - name: Rust install
           shell:
-            chdir: '/home/developer'
-            cmd: 'su developer -c "$(pwd)/rustup.rs -y"'
+            chdir: '/home/{{USER}}'
+            cmd: 'su {{USER}}  -c "$(pwd)/rustup.rs -y"'
         - name: Clear cache
           file:
-            path: "/home/developer/rustup.rs"
+            path: "/home/{{USER}}/rustup.rs"
             state: absent
+
+            
+    - name: Go instalation
+      block:
+        - name: Check Go installation
+          shell:
+            cmd: 'go version'
+      rescue:
+        - name: Go installer download
+          get_url:
+            dest: '/home/{{USER}}'
+            url: "https://storage.googleapis.com/golang/getgo/installer_linux"
+            mode: '0777'
+        - name: Go download
+          shell:
+            chdir: '/home/{{USER}}'
+            cmd: 'su {{USER}} -c ./installer_linux && '
+
+    - name: Snap installation
+      block:
+        - name: Check snap installation
+          shell:
+            cmd: 'snap --version'
+      rescue:
+        - name: Snap installer
+          shell:
+            cmd: 'su {{USER}} snapd'
+            
+    - name: Kotlin installation
+      block:
+        - name: check kotlin
+          shell:
+            cmd: 'kotlinc -help'
+      rescue:
+        - name: kotlin download
+          shell:
+            cmd: 'su {{USER}} snap install kotlin --classic'
+
+
+    - name: Groovy installation
+      block:
+        - name: Check groovy installation
+          shell:
+            cmd: 'groovy --version'
+      rescue:
+        - name: Groovy installer
+          shell:
+            cmd: 'su {{USER}} snap install groovy --classic'
+        
+    - name: Nodejs installation
+      block:
+        - name: Check nodejs installation
+          shell:
+            cmd: 'node --version'
+
+      rescue:
+        - name: Node installer
+          shell:
+            cmd: 'su {{USER}} dnf install nodejs'
+
+    - name: TypeScript installation
+      block:
+        - name: Check type script
+          shell:
+            cmd: 'tsc -v'
+      rescue:
+        - name: tsc download
+          shell:
+            cmd: 'su {{USER}} npm install typescript --save-dev'
+        
+   
