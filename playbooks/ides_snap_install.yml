@@ -1,0 +1,9 @@
+---
+- name: 'check {{item}} installation'
+  stat: path='/snap/{{item}}'
+  register: package
+
+- name: '{{item}} download'
+  shell:
+    cmd: 'su  -c "snap install {{item}}  --classic"'
+  when: package.stat.exists == False
