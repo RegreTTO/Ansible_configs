@@ -17,6 +17,7 @@
         - postman
         - brackets
         - eclipse
+        - nvim
         
     
   tasks:
@@ -56,6 +57,4 @@
     - name: IDEs installation
       include_tasks: 'ides_snap_install.yml'
       loop: "{{snap_packages}}"
-      
-            
-        
+
