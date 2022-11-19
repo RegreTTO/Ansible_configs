@@ -18,7 +18,8 @@
         - brackets
         - eclipse
         - nvim
-        
+        - kotlin
+        - go        
     
   tasks:
     - name: Get pwd
