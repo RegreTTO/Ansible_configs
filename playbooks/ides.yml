@@ -1,0 +1,60 @@
+---
+- name: Installation of ides
+  hosts: all
+  become: true
+  force_handlers: true
+  vars:
+    - USER: andy
+    - yum_packages:
+        - git
+        - snapd
+    - snap_packages:
+        - pycharm-community
+        - intellij-idea-community
+        - code
+        - atom
+        - sublime-text
+        - postman
+        - brackets
+        - eclipse
+        - nvim
+        
+    
+  tasks:
+    - name: Get pwd
+      shell:
+        cmd: "pwd"
+      register: home_dir
+    - debug:
+        msg: "Commands are running in {{ home_dir['stdout'] }}"
+    - name: Packages installation
+      yum:
+        state: latest
+        name: "{{ yum_packages }}"
+    - name: GEF Installation
+      shell:
+        cmd: 'su {{USER}} -c bash -c "$(curl -fsSL https://gef.blah.cat/sh)"'
+
+    - name: Check snap service
+      block:
+        - name: is exists
+          stat: path=/snap
+          register: links
+        - debug:
+            msg: '{{links}}'
+        - name: link
+          shell:
+            cmd: 'ln -s /var/lib/snapd/snap /snap'   
+          when: links.stat.exists == False
+          
+        
+        
+    - name: Snap service start
+      service:
+        name: snapd
+        state: started
+        
+    - name: IDEs installation
+      include_tasks: 'ides_snap_install.yml'
+      loop: "{{snap_packages}}"
+
