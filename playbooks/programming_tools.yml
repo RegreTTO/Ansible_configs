@@ -4,7 +4,7 @@
   become: true
   force_handlers: true
   vars:
-
+    - USER: developer
     - yum_packages:
         - "@Development tools"
         - git
@@ -14,7 +14,10 @@
         - tar
         - python
         - java-11-openjdk-devel
-
+        - ruby
+        - php
+        - lua
+        - perl
   tasks:
     - name: Get pwd
       shell:
@@ -22,33 +25,63 @@
       register: home_dir
     - debug:
         msg: "Commands are running in {{ home_dir['stdout'] }}"
-    - name: Packages installation
+    - name: Async packages installation
       yum:
         state: latest
-        name: "{{ yum_packages }}"
+        name: "{{ item }}"
+      async: 60
+      poll: 2
+      loop: "{{ yum_packages }}"
+    - name: R async install
+      yum:
+        state: latest
+        name: "R"
+      async: 180
+      poll: 0
     - name: GEF Installation
       shell:
-        cmd: 'su developer -c bash -c "$(curl -fsSL https://gef.blah.cat/sh)"'
+        cmd: 'su {{USER}} -c bash -c "$(curl -fsSL https://gef.blah.cat/sh)"'
     - name: Rust installation
       block:
         - name: Check Rust installation
           shell:
-            cmd: 'su developer -c rustc -V'
+            cmd: 'su {{USER}} -c rustc -V'
           register: rust_version
         - debug:
-            msg: "Rust version: {{ rust_version['stdin'] }}"
+            msg: "Rust version: {{ rust_version['stdout'] }}"
 
       rescue:
         - name: Rust download
           get_url:
-            dest: '/home/developer/rustup.rs'
+            dest: '/home/{{USER}}/rustup.rs'
             url: "https://sh.rustup.rs"
             mode: '0777'
         - name: Rust install
           shell:
-            chdir: '/home/developer'
-            cmd: 'su developer -c "$(pwd)/rustup.rs -y"'
+            chdir: '/home/{{USER}}'
+            cmd: 'su {{USER}}  -c "$(pwd)/rustup.rs -y"'
+          async: 50
+          poll: 0
         - name: Clear cache
           file:
-            path: "/home/developer/rustup.rs"
+            path: "/home/{{USER}}/rustup.rs"
             state: absent
+    - name: Nodejs installation
+      block:
+        - name: Check nodejs installation
+          shell:
+            cmd: 'node --version && npm --version'
+      rescue:
+        - name: Node installer
+          shell:
+            cmd: 'yes | sudo dnf install nodejs npm'
+
+    - name: TypeScript installation
+      block:
+        - name: Check type script
+          shell:
+            cmd: 'npx tsc -v'
+      rescue:
+        - name: tsc download
+          shell:
+            cmd: 'npm install typescript --save-dev'
